@@ -64,8 +64,6 @@ DEFAULT_CONFIG = """# Codex execution settings.
 binary = "codex"
 # Optional model override. Leave empty to use the CLI default.
 model = ""
-# Enable Codex web search during runs when true.
-web_search = false
 # Extra CLI args passed through to `codex exec`.
 extra_args = []
 
@@ -111,7 +109,6 @@ class GitError(RuntimeError):
 class CodexSettings:
     binary: str = "codex"
     model: Optional[str] = None
-    web_search: bool = False
     extra_args: List[str] = field(default_factory=list)
 
 
@@ -614,7 +611,6 @@ def load_project_config(repo: Path) -> ProjectConfig:
         codex=CodexSettings(
             binary=str(codex_section.get("binary", "codex")),
             model=_empty_to_none(codex_section.get("model")),
-            web_search=bool(codex_section.get("web_search", False)),
             extra_args=[str(item) for item in codex_section.get("extra_args", [])],
         ),
         evaluator=EvaluatorSettings(
@@ -962,8 +958,6 @@ def run_codex(
     ]
     if settings.model:
         command.extend(["-m", settings.model])
-    if settings.web_search:
-        command.append("--search")
     command.extend(settings.extra_args)
 
     if progress is not None and not progress.enabled:

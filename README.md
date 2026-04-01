@@ -60,8 +60,6 @@ Edit `/tmp/demo-repo/config.toml`:
 binary = "codex"
 # Optional model override. Leave empty to use the CLI default.
 model = ""
-# Enable Codex web search during runs when true.
-web_search = false
 # Extra CLI args passed through to `codex exec`.
 extra_args = []
 
