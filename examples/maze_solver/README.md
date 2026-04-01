@@ -21,14 +21,16 @@ python3 /path/to/run.py run --repo /tmp/maze-solver-demo
 ## How the benchmark works
 
 - `solver.py` is the only file the agent should edit.
-- `benchmark.py` generates a fixed set of weighted grid mazes from deterministic seeds.
+- `benchmark.py` generates a deterministic mixed suite of much larger weighted mazes.
 - Each maze has an exact reference cost computed by an unrestricted Dijkstra search inside the benchmark.
-- The candidate solver only gets a tight node-expansion budget for each maze.
-- The score rewards two things, in this order:
+- The candidate solver gets a per-case search budget and an independently measured wall-time limit.
+- The score rewards three things, in this order:
   - solving more mazes
   - getting path cost closer to the exact optimum
+  - finishing faster according to the benchmark's own timing harness
 - This makes it an optimization problem rather than a one-shot perfect shortest-path exercise.
 - The benchmark still prints the solver's reported `expanded` count for debugging, but it does not score it because that number comes from candidate code and is not independently verifiable.
+- The latency bonus loses at least one point on any non-zero runtime, so the nominal top score is intentionally not cleanly reachable in practice.
 
 The score is absolute:
 
