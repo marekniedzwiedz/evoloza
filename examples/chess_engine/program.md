@@ -12,10 +12,14 @@ matches against the previous committed version.
 - Keep `engine.py` speaking basic UCI so `benchmark.py` can launch it.
 - Do not add new dependencies beyond `requirements.txt`.
 - Keep the benchmark fast enough for many rounds.
+- Treat `python3 benchmark.py` as expensive.
 
 ## Strategy
 - Prefer small search and evaluation improvements.
 - Favor legal, deterministic play over risky complexity.
 - Do not overfit to one starting position.
 - If an idea draws too often, try sharper move ordering or a better evaluation.
-- Use internet to find out ideas - explore open source engines like stockfish, look up reddit and other sources.
+- Run `python3 -m unittest -q` freely while iterating.
+- Run `python3 benchmark.py` only after a meaningful engine change that is ready for evaluation.
+- Avoid running the full benchmark repeatedly for tiny tweaks inside one round.
+- If a change clearly failed tests or is obviously weaker, fix it before rerunning the benchmark.

@@ -5,8 +5,8 @@ This is a template target repo for Codex-AutoResearch.
 Copy it to a separate directory first, then initialize it as its own git repo:
 
 ```bash
-cp -R examples/chess_engine tmp/chess-engine-demo
-cd tmp/chess-engine-demo
+cp -R examples/chess_engine /tmp/chess-engine-demo
+cd /tmp/chess-engine-demo
 git init -b main
 python3 -m pip install -r requirements.txt
 git add .
@@ -16,7 +16,7 @@ git commit -m "Initialize chess engine example"
 Then run the harness against the copied repo:
 
 ```bash
-python3 /path/to/run.py run --repo tmp/chess-engine-demo
+python3 /path/to/run.py run --repo /tmp/chess-engine-demo
 ```
 
 ## How the benchmark works
