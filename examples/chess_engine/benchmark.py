@@ -15,7 +15,6 @@ import chess.engine
 
 ROOT = Path(__file__).resolve().parent
 ENGINE_PATH = ROOT / "engine.py"
-ALLOWED_CHANGED_FILES = {"engine.py"}
 MAX_PLIES = 400
 DEFAULT_MOVETIME_MS = int(os.environ.get("UCI_MOVETIME_MS", "100"))
 ELO_PRIOR_POINTS = 0.5
@@ -78,7 +77,7 @@ def play_match(previous_path: Path) -> tuple[float, list[tuple[str, bool, float,
 
 def assert_allowed_changes() -> None:
     result = subprocess.run(
-        ["git", "diff", "--name-only", "HEAD", "--"],
+        ["git", "diff", "--name-only", "HEAD", "--", "."],
         cwd=str(ROOT),
         capture_output=True,
         text=True,
@@ -87,7 +86,7 @@ def assert_allowed_changes() -> None:
     if result.returncode != 0:
         raise SystemExit("Unable to inspect git diff against HEAD")
     changed = {line.strip() for line in result.stdout.splitlines() if line.strip()}
-    unexpected = sorted(changed - ALLOWED_CHANGED_FILES)
+    unexpected = sorted(changed - allowed_changed_files())
     if unexpected:
         raise SystemExit("Only engine.py may change in this example; found: {0}".format(", ".join(unexpected)))
 
@@ -152,18 +151,35 @@ def estimate_match_elo_delta(candidate_points: float, total_games: int) -> float
 
 
 def write_previous_engine(tmpdir: Path) -> Path:
+    engine_blob = repo_relative_path(ENGINE_PATH)
     result = subprocess.run(
-        ["git", "show", "HEAD:engine.py"],
+        ["git", "show", "HEAD:{0}".format(engine_blob)],
         cwd=str(ROOT),
         capture_output=True,
         text=True,
         check=False,
     )
     if result.returncode != 0:
-        raise SystemExit("Unable to load HEAD:engine.py")
+        raise SystemExit("Unable to load HEAD:{0}".format(engine_blob))
     path = tmpdir / "previous_engine.py"
     path.write_text(result.stdout, encoding="utf-8")
     return path
+
+
+def allowed_changed_files(root: Path = ROOT) -> set[str]:
+    repo_relative = repo_relative_path(root / "engine.py", root=root)
+    return {repo_relative, Path(repo_relative).name}
+
+
+def repo_relative_path(path: Path, root: Path = ROOT) -> str:
+    repo_root = shared_repo_root(root).resolve()
+    resolved_path = path.resolve()
+    try:
+        relative_path = resolved_path.relative_to(repo_root)
+    except ValueError:
+        return path.name
+    relative_text = relative_path.as_posix()
+    return relative_text or path.name
 
 
 def launch_engine(path: Path) -> chess.engine.SimpleEngine:

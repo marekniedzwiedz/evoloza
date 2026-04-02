@@ -1,0 +1,19 @@
+from pathlib import Path
+
+from setuptools import setup
+
+
+README = Path(__file__).with_name("README.md").read_text(encoding="utf-8")
+
+
+setup(
+    name="codex-autoresearch",
+    version="0.1.0",
+    description="A Codex-native autoresearch harness for git repositories.",
+    long_description=README,
+    long_description_content_type="text/markdown",
+    author="Codex AutoResearch",
+    python_requires=">=3.9",
+    py_modules=["run"],
+    entry_points={"console_scripts": ["codex-autoresearch=run:main"]},
+)
