@@ -50,7 +50,7 @@ def main() -> int:
     print("promotion_earned={0}".format("yes" if promotion else "no"))
     print("estimated_match_elo_delta={0:+.1f}".format(match_elo_delta))
     print("estimated_champion_elo={0:.1f}".format(score))
-    print("AUTORESEARCH_SCORE={0:.1f}".format(score))
+    print("EVOLOZA_SCORE={0:.1f}".format(score))
     return 0
 
 

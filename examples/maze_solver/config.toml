@@ -21,7 +21,7 @@ max_stagnation_rounds = 3
 # Commands run after each Codex attempt. All must exit with code 0.
 commands = ["python3 -m unittest -q", "python3 benchmark.py"]
 # Regex used to extract the numeric score from evaluator output.
-score_regex = "AUTORESEARCH_SCORE=(?P<score>-?[0-9]+(?:\\.[0-9]+)?)"
+score_regex = "EVOLOZA_SCORE=(?P<score>-?[0-9]+(?:\\.[0-9]+)?)"
 # Higher is better because the benchmark uses an absolute score.
 direction = "maximize"
 

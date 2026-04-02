@@ -92,9 +92,9 @@ max_stagnation_rounds = 3
 # How the harness evaluates a candidate branch.
 [evaluator]
 # Commands run after each Codex attempt. All must exit with code 0.
-commands = ["python3 -c \\"print('AUTORESEARCH_SCORE=0')\\""]
+commands = ["python3 -c \\"print('EVOLOZA_SCORE=0')\\""]
 # Regex used to extract the numeric score from evaluator output.
-score_regex = "AUTORESEARCH_SCORE=(?P<score>-?[0-9]+(?:\\\\.[0-9]+)?)"
+score_regex = "EVOLOZA_SCORE=(?P<score>-?[0-9]+(?:\\\\.[0-9]+)?)"
 # Use `maximize` when bigger is better, `minimize` when smaller is better.
 direction = "maximize"
 
@@ -1896,7 +1896,7 @@ def parse_session_call_arguments(arguments: Any) -> Dict[str, Any]:
 
 def classify_command_phase(command: str) -> str:
     lowered = command.lower()
-    if "benchmark.py" in lowered or "autoresearch_score" in lowered:
+    if "benchmark.py" in lowered or "evoloza_score" in lowered or "autoresearch_score" in lowered:
         return "benchmarking"
     if "pytest" in lowered or "unittest" in lowered or "cargo test" in lowered or "npm test" in lowered:
         return "testing"

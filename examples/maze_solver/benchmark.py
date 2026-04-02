@@ -436,7 +436,7 @@ def main() -> int:
         )
 
     print("solved={0}/{1}".format(solved_count, len(CASE_SPECS)))
-    print("AUTORESEARCH_SCORE={0}".format(total_score))
+    print("EVOLOZA_SCORE={0}".format(total_score))
     return 0
 
 

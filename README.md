@@ -97,7 +97,7 @@ The harness writes its own state under `.evoloza/`, including:
 ## Quick Start
 
 Assume you have a repo at `/tmp/demo-repo` with some code and a benchmark
-command that prints a score like `AUTORESEARCH_SCORE=123`.
+command that prints a score like `EVOLOZA_SCORE=123`.
 
 Initialize the repo:
 
@@ -143,7 +143,7 @@ max_stagnation_rounds = 3
 # How the harness evaluates a candidate branch.
 [evaluator]
 commands = ["python3 benchmark.py"]
-score_regex = "AUTORESEARCH_SCORE=(?P<score>-?[0-9]+(?:\\.[0-9]+)?)"
+score_regex = "EVOLOZA_SCORE=(?P<score>-?[0-9]+(?:\\.[0-9]+)?)"
 direction = "maximize"
 
 # Git and artifact layout.
@@ -188,7 +188,7 @@ than a toy example. The implementation complexity mostly comes from:
 - resumable experiment history across runs
 - Codex process integration and live progress reporting
 
-If you want the smallest possible autoresearch repo, follow Karpathy's design
+If you want the smallest possible repo in this style, follow Karpathy's design
 and bake the loop into one specific target repository. If you want the loop as
 reusable infrastructure, this repo is aiming at that second category.
 

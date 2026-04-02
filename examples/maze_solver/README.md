@@ -34,7 +34,7 @@ evoloza run --repo /tmp/maze-solver-demo
 
 The score is absolute:
 
-- better solvers get a higher `AUTORESEARCH_SCORE`
+- better solvers get a higher `EVOLOZA_SCORE`
 - unchanged or weaker solvers stay flat or drop
 - the harness advances only when the new score beats the current champion
 

@@ -37,7 +37,7 @@ evoloza run --repo /tmp/chess-engine-demo
 - If it scores 50% or less, promotion is not earned and the harness rejects
   it.
 
-The benchmark still emits a numeric `AUTORESEARCH_SCORE` for the harness, but
+The benchmark still emits a numeric `EVOLOZA_SCORE` for the harness, but
 that number is now just an Elo-like champion rating anchored at `0.0` for the
 initial engine:
 
