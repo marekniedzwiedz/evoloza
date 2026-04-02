@@ -1,19 +1,67 @@
 # Codex-AutoResearch
 
-Codex-AutoResearch is a small Python CLI that runs Codex in a loop against a
-target repository, evaluates one candidate at a time, and only commits changes
-when they beat the current champion score.
+Codex-AutoResearch is a reusable harness for running agent-driven improvement
+loops against arbitrary git repositories.
 
-The project is intentionally flat: the main implementation lives in `run.py`.
+You point it at a target repo, give it instructions in `program.md`, and define
+an evaluator command that emits a numeric score. The harness then creates
+isolated candidate branches, asks Codex to make one focused improvement
+attempt, runs the evaluator, and only keeps the change if it beats the current
+champion.
+
+This is not a tiny single-repo demo like `karpathy/autoresearch`, where the
+agent edits one training file inside one research target. This project is the
+generic orchestration layer for applying the same pattern to many repos, which
+is why it includes git isolation, run state, resumable history, artifacts, and
+reporting.
+
+The current implementation is mostly contained in `run.py`.
 
 ## Example Run
 
-Here is a real run on the hardened maze benchmark from
-`examples/maze_solver`. The first few rounds found the major algorithmic
-improvement; the later rounds mostly shaved latency while preserving exact
-benchmark quality.
+Here is a real run on the hardened maze benchmark from `examples/maze_solver`.
+The first few rounds found the major algorithmic improvement; the later rounds
+mostly shaved latency while preserving exact benchmark quality.
 
 ![Maze solver example progress](assets/maze-example-progress.svg)
+
+## What The Harness Manages
+
+- A clean baseline score from the current branch
+- One candidate branch and one git worktree per round
+- Codex invocation and structured experiment summaries
+- Evaluator execution and score extraction
+- Champion promotion when a candidate improves the score
+- Append-only experiment history in `.autoresearch/results.tsv`
+- Per-run state and artifacts so runs can be resumed or inspected later
+
+## Core Loop
+
+1. Measure the baseline on the current branch.
+2. Create a candidate branch and worktree from the current champion.
+3. Ask Codex to make one focused improvement attempt.
+4. Run the evaluator command(s) and extract the score.
+5. If the score improves, commit and promote the candidate.
+6. If the score does not improve, discard the candidate branch.
+7. Record the outcome and continue until a stopping condition is reached.
+
+## How This Differs From `karpathy/autoresearch`
+
+`karpathy/autoresearch` is a compact research target. Most of the policy lives
+in `program.md`, the editable surface is intentionally tiny, and the repo is
+optimized for legibility.
+
+Codex-AutoResearch takes the same basic hill-climbing pattern but packages it
+as a reusable harness:
+
+- It works on arbitrary git repos, not one training script.
+- It supports arbitrary evaluator commands, not one fixed benchmark.
+- It tracks explicit run state, candidate state, and champion state.
+- It uses git worktrees and candidate branches for isolation.
+- It preserves per-round artifacts and cross-run history under `.autoresearch/`.
+
+The extra code is there to make the loop repeatable across different target
+repositories, not because the underlying search idea is more complicated.
 
 ## Commands
 
@@ -22,19 +70,34 @@ benchmark quality.
 - `codex-autoresearch status --repo /path/to/repo`
 - `codex-autoresearch report --repo /path/to/repo`
 
-Target repos use:
+For local development in this repository, you can also run:
 
-- `program.md` for human-written guidance
-- `config.toml` for loop and evaluator settings
-- `init` prepopulates both files with starter content, and `config.toml` includes comments
-- `.autoresearch/results.tsv` as an append-only experiment log across runs
+- `python3 run.py init --repo /path/to/repo`
+- `python3 run.py run --repo /path/to/repo`
+- `python3 run.py status --repo /path/to/repo`
+- `python3 run.py report --repo /path/to/repo`
 
-## Example
+## Target Repo Contract
 
-Assume you have a repo at `/tmp/demo-repo` with some code and a command that
-prints a score like `AUTORESEARCH_SCORE=123`.
+Each target repo supplies:
 
-Initialize the repo for Codex-AutoResearch:
+- `program.md` with human-written guidance for Codex
+- `config.toml` with loop and evaluator settings
+- At least one evaluator command that exits successfully and prints a parseable score
+
+The harness writes its own state under `.autoresearch/`, including:
+
+- `.autoresearch/results.tsv` for cross-run experiment history
+- `.autoresearch/runs/<run_id>/state.json` for the latest run state
+- `.autoresearch/runs/<run_id>/rounds/...` for per-round prompts, logs, and results
+- `.autoresearch/worktrees/...` for temporary candidate worktrees
+
+## Quick Start
+
+Assume you have a repo at `/tmp/demo-repo` with some code and a benchmark
+command that prints a score like `AUTORESEARCH_SCORE=123`.
+
+Initialize the repo:
 
 ```bash
 python3 run.py init --repo /tmp/demo-repo
@@ -65,36 +128,25 @@ Edit `/tmp/demo-repo/config.toml`:
 ```toml
 # Codex execution settings.
 [codex]
-# Path to the Codex CLI binary.
 binary = "codex"
-# Optional model override. Leave empty to use the CLI default.
 model = ""
-# Extra CLI args passed through to `codex exec`.
 extra_args = []
 
 # Loop stopping conditions.
 [search]
-# Maximum number of candidate rounds to try.
 max_rounds = 5
-# Maximum wall clock time for a run, in minutes.
 max_wall_time_minutes = 60
-# Stop after this many non-improving rounds in a row.
 max_stagnation_rounds = 3
 
 # How the harness evaluates a candidate branch.
 [evaluator]
-# Commands run after each Codex attempt. All must exit with code 0.
 commands = ["python3 benchmark.py"]
-# Regex used to extract the numeric score from evaluator output.
 score_regex = "AUTORESEARCH_SCORE=(?P<score>-?[0-9]+(?:\\.[0-9]+)?)"
-# Use `maximize` when bigger is better, `minimize` when smaller is better.
 direction = "maximize"
 
 # Git and artifact layout.
 [git]
-# Optional base branch override. Leave empty to auto-detect.
 base_branch = ""
-# Directory inside the target repo where logs, state, and worktrees are stored.
 artifacts_dir = ".autoresearch"
 ```
 
@@ -106,27 +158,45 @@ python3 run.py status --repo /tmp/demo-repo
 python3 run.py report --repo /tmp/demo-repo
 ```
 
-What happens:
+## What Happens During `run`
 
-- The tool creates a baseline score from the current branch.
-- For each round, it creates one candidate branch and one git worktree.
-- It asks Codex to make one focused improvement attempt.
-- Each attempt must return a `hypothesis` describing what the experiment is trying.
-- It runs your evaluator command.
-- If the score improves, it commits the candidate and makes it the new champion.
-- If the score does not improve, it deletes the candidate branch and tries again next round.
-- The full experiment log is fed back into the next prompt, and exact repeated hypotheses are rejected as duplicates.
-- `run` stays in the foreground and shows one live status line with elapsed time, idle time, the current phase, and cumulative input/output token usage streamed from Codex session files when available.
-- When a phase finishes, `run` prints a durable line showing how long it took, so you can see the rhythm of each round without duplicating the live status line.
-- If the latest run already completed or stopped, `run` starts a fresh run automatically from the last committed champion and keeps using the full experiment history in `.autoresearch/results.tsv`.
+- The harness measures a baseline score from the current branch.
+- Each round runs in its own candidate branch and git worktree.
+- Codex is asked to make one improvement attempt and return a hypothesis.
+- The evaluator command(s) run against the candidate worktree.
+- If the score improves, the candidate is committed and becomes the new champion.
+- If the score does not improve, the candidate branch is discarded.
+- The full experiment history is fed back into the next prompt, and exact
+  repeated hypotheses are rejected as duplicates.
+- `run` stays in the foreground and shows progress, elapsed time, and token
+  usage when Codex session files are available.
+- If the latest run already completed or stopped, `run` starts a fresh run from
+  the last committed champion and continues using the full experiment history in
+  `.autoresearch/results.tsv`.
 
-Artifacts are written under `/tmp/demo-repo/.autoresearch/`.
-The main cross-run log is `/tmp/demo-repo/.autoresearch/results.tsv`.
+## Why The Repo Is Larger Than A Demo
+
+This repository is intentionally opinionated, but it is still a harness rather
+than a toy example. The implementation complexity mostly comes from:
+
+- generic target-repo support
+- git worktree and branch lifecycle management
+- persistent run/champion/candidate state
+- artifact capture for debugging and inspection
+- resumable experiment history across runs
+- Codex process integration and live progress reporting
+
+If you want the smallest possible autoresearch repo, follow Karpathy's design
+and bake the loop into one specific target repository. If you want the loop as
+reusable infrastructure, this repo is aiming at that second category.
 
 ## Notes
 
 - The target repo can be created automatically if it does not exist yet.
 - If the target repo is missing git, `init` and `run` will initialize it.
 - The target repo must be clean before `run` starts.
-- This project uses the Python standard library plus `tomli` on Python versions older than 3.11.
-- To actually run experiments, you still need `git` and the Codex CLI installed, or another compatible binary configured via `config.toml` under `[codex].binary`.
+- This project uses the Python standard library plus `tomli` on Python versions
+  older than 3.11.
+- To actually run experiments, you still need `git` and the Codex CLI
+  installed, or another compatible binary configured via `config.toml` under
+  `[codex].binary`.
