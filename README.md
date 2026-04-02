@@ -128,5 +128,5 @@ The main cross-run log is `/tmp/demo-repo/.autoresearch/results.tsv`.
 - The target repo can be created automatically if it does not exist yet.
 - If the target repo is missing git, `init` and `run` will initialize it.
 - The target repo must be clean before `run` starts.
-- This project has no Python package dependencies outside the Python standard library.
+- This project uses the Python standard library plus `tomli` on Python versions older than 3.11.
 - To actually run experiments, you still need `git` and the Codex CLI installed, or another compatible binary configured via `config.toml` under `[codex].binary`.

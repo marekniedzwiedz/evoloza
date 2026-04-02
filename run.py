@@ -16,6 +16,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+try:
+    import tomllib as _toml
+except ModuleNotFoundError:
+    try:
+        import tomli as _toml
+    except ModuleNotFoundError:
+        _toml = None
+
 
 PROGRAM_FILENAME = "program.md"
 CONFIG_FILENAME = "config.toml"
@@ -92,10 +100,6 @@ base_branch = ""
 # Directory inside the target repo where logs, state, and worktrees are stored.
 artifacts_dir = ".autoresearch"
 """
-
-_INT_PATTERN = re.compile(r"^[+-]?\d+$")
-_FLOAT_PATTERN = re.compile(r"^[+-]?\d+\.\d+$")
-
 
 class TomlDecodeError(ValueError):
     pass
@@ -541,28 +545,12 @@ class CodexSessionUsageWatcher:
 
 
 def loads_toml(text: str) -> Dict[str, Any]:
-    data: Dict[str, Any] = {}
-    current: Dict[str, Any] = data
-    for line_number, raw_line in enumerate(text.splitlines(), start=1):
-        line = _strip_inline_comment(raw_line).strip()
-        if not line:
-            continue
-        if line.startswith("[") and line.endswith("]"):
-            current = data
-            section = line[1:-1].strip()
-            if not section:
-                raise TomlDecodeError("Empty section name")
-            for part in section.split("."):
-                current = current.setdefault(part, {})
-            continue
-        if "=" not in line:
-            raise TomlDecodeError("Expected key/value pair at line {0}".format(line_number))
-        key, raw_value = line.split("=", 1)
-        key = key.strip()
-        if not key:
-            raise TomlDecodeError("Missing key at line {0}".format(line_number))
-        current[key] = _parse_toml_value(raw_value.strip())
-    return data
+    if _toml is None:
+        raise RuntimeError("Install tomli to load TOML config files on Python < 3.11")
+    try:
+        return _toml.loads(text)
+    except _toml.TOMLDecodeError as exc:
+        raise TomlDecodeError(str(exc)) from exc
 
 
 def ensure_project_files(repo: Path, force: bool = False) -> None:
@@ -1643,93 +1631,6 @@ def main(argv: Optional[List[str]] = None) -> int:
         return 1
     parser.print_help()
     return 1
-
-
-def _strip_inline_comment(line: str) -> str:
-    result = []
-    in_string = False
-    quote_char = ""
-    escaped = False
-    for char in line:
-        if in_string:
-            result.append(char)
-            if escaped:
-                escaped = False
-            elif char == "\\" and quote_char == '"':
-                escaped = True
-            elif char == quote_char:
-                in_string = False
-                quote_char = ""
-            continue
-        if char in ('"', "'"):
-            in_string = True
-            quote_char = char
-            result.append(char)
-            continue
-        if char == "#":
-            break
-        result.append(char)
-    return "".join(result)
-
-
-def _parse_toml_value(value: str) -> Any:
-    if not value:
-        raise TomlDecodeError("Empty value")
-    if value.startswith('"') and value.endswith('"'):
-        return json.loads(value)
-    if value.startswith("'") and value.endswith("'"):
-        return value[1:-1]
-    if value.startswith("[") and value.endswith("]"):
-        inner = value[1:-1].strip()
-        if not inner:
-            return []
-        return [_parse_toml_value(item.strip()) for item in _split_top_level(inner)]
-    if value == "true":
-        return True
-    if value == "false":
-        return False
-    if _INT_PATTERN.match(value):
-        return int(value)
-    if _FLOAT_PATTERN.match(value):
-        return float(value)
-    raise TomlDecodeError("Unsupported TOML value: {0}".format(value))
-
-
-def _split_top_level(text: str) -> List[str]:
-    items = []
-    current = []
-    depth = 0
-    in_string = False
-    quote_char = ""
-    escaped = False
-    for char in text:
-        if in_string:
-            current.append(char)
-            if escaped:
-                escaped = False
-            elif char == "\\" and quote_char == '"':
-                escaped = True
-            elif char == quote_char:
-                in_string = False
-                quote_char = ""
-            continue
-        if char in ('"', "'"):
-            in_string = True
-            quote_char = char
-            current.append(char)
-            continue
-        if char == "[":
-            depth += 1
-        elif char == "]":
-            depth -= 1
-        elif char == "," and depth == 0:
-            items.append("".join(current).strip())
-            current = []
-            continue
-        current.append(char)
-    if current:
-        items.append("".join(current).strip())
-    return items
 
 
 def _write_if_needed(path: Path, content: str, force: bool) -> None:

@@ -14,6 +14,7 @@ setup(
     long_description_content_type="text/markdown",
     author="Codex AutoResearch",
     python_requires=">=3.9",
+    install_requires=["tomli>=2.0.1; python_version < '3.11'"],
     py_modules=["run"],
     entry_points={"console_scripts": ["codex-autoresearch=run:main"]},
 )
