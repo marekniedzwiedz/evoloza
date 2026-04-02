@@ -6,6 +6,15 @@ when they beat the current champion score.
 
 The project is intentionally flat: the main implementation lives in `run.py`.
 
+## Example Run
+
+Here is a real run on the hardened maze benchmark from
+`examples/maze_solver`. The first few rounds found the major algorithmic
+improvement; the later rounds mostly shaved latency while preserving exact
+benchmark quality.
+
+![Maze solver example progress](assets/maze-example-progress.svg)
+
 ## Commands
 
 - `codex-autoresearch init --repo /path/to/repo`
