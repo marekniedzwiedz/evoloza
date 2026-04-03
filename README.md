@@ -99,6 +99,7 @@ Evaluator commands also receive run-local context through environment variables:
 - `EVOLOZA_RUN_ID`
 - `EVOLOZA_ROUND`
 - `EVOLOZA_ARTIFACT_DIR`
+- `EVOLOZA_ARTIFACTS_ROOT`
 - `EVOLOZA_WORKTREE`
 - `EVOLOZA_BASE_BRANCH`
 - `EVOLOZA_CHAMPION_BRANCH` when a champion already exists

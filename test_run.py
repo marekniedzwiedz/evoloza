@@ -12,6 +12,7 @@ class EvaluatorContextEnvTests(unittest.TestCase):
             run_id="run-123",
             round_index=7,
             artifact_dir=Path("/tmp/artifacts"),
+            artifacts_root=Path("/tmp/.evoloza-campaign"),
             worktree=Path("/tmp/worktree"),
             base_branch="main",
             champion_branch="evoloza/run-123/r006",
@@ -20,6 +21,7 @@ class EvaluatorContextEnvTests(unittest.TestCase):
         self.assertEqual(env["EVOLOZA_RUN_ID"], "run-123")
         self.assertEqual(env["EVOLOZA_ROUND"], "7")
         self.assertEqual(env["EVOLOZA_ARTIFACT_DIR"], "/tmp/artifacts")
+        self.assertEqual(env["EVOLOZA_ARTIFACTS_ROOT"], "/tmp/.evoloza-campaign")
         self.assertEqual(env["EVOLOZA_WORKTREE"], "/tmp/worktree")
         self.assertEqual(env["EVOLOZA_BASE_BRANCH"], "main")
         self.assertEqual(env["EVOLOZA_CHAMPION_BRANCH"], "evoloza/run-123/r006")
@@ -30,6 +32,7 @@ class EvaluatorContextEnvTests(unittest.TestCase):
             run_id="run-123",
             round_index=0,
             artifact_dir=Path("/tmp/artifacts"),
+            artifacts_root=Path("/tmp/.evoloza-campaign"),
             worktree=Path("/tmp/repo"),
             base_branch="main",
         )
