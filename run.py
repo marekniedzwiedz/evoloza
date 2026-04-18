@@ -380,7 +380,7 @@ base_branch = ""
 artifacts_dir = ".evoloza"
 # Copy each evaluated candidate worktree into the round artifacts before cleanup
 # so the exact source tree and built binaries remain inspectable later.
-preserve_candidate_worktrees = false
+preserve_candidate_worktrees = true
 """
 
 class TomlDecodeError(ValueError):
@@ -434,7 +434,7 @@ class SearchSettings:
 class GitSettings:
     base_branch: Optional[str] = None
     artifacts_dir: str = DEFAULT_ARTIFACTS_DIR
-    preserve_candidate_worktrees: bool = False
+    preserve_candidate_worktrees: bool = True
 
 
 @dataclass
@@ -1087,7 +1087,7 @@ def load_project_config(repo: Path, config_path: Optional[Path] = None) -> Proje
     evaluator_section = data.get("evaluator", {})
     search_section = data.get("search", {})
     git_section = data.get("git", {})
-    preserve_candidate_worktrees = git_section.get("preserve_candidate_worktrees", False)
+    preserve_candidate_worktrees = git_section.get("preserve_candidate_worktrees", True)
     if not isinstance(preserve_candidate_worktrees, bool):
         raise ValueError("git.preserve_candidate_worktrees must be a boolean")
 

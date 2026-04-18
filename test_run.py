@@ -200,6 +200,46 @@ score_regex = "EVOLOZA_SCORE=(?P<score>[0-9]+)"
             config.executor.ollama_options,
             {"num_ctx": 131072, "num_predict": 1024},
         )
+        self.assertIs(config.git.preserve_candidate_worktrees, True)
+
+    def test_load_project_config_preserves_candidate_worktrees_by_default(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            repo = Path(tmpdir)
+            (repo / "config.toml").write_text(
+                """
+[worker]
+backend = "codex"
+
+[evaluator]
+commands = ["python3 benchmark.py"]
+score_regex = "EVOLOZA_SCORE=(?P<score>[0-9]+)"
+""".strip()
+                + "\n",
+                encoding="utf-8",
+            )
+            config = load_project_config(repo)
+        self.assertIs(config.git.preserve_candidate_worktrees, True)
+
+    def test_load_project_config_allows_disabling_candidate_worktree_preservation(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            repo = Path(tmpdir)
+            (repo / "config.toml").write_text(
+                """
+[worker]
+backend = "codex"
+
+[evaluator]
+commands = ["python3 benchmark.py"]
+score_regex = "EVOLOZA_SCORE=(?P<score>[0-9]+)"
+
+[git]
+preserve_candidate_worktrees = false
+""".strip()
+                + "\n",
+                encoding="utf-8",
+            )
+            config = load_project_config(repo)
+        self.assertIs(config.git.preserve_candidate_worktrees, False)
 
     def test_load_project_config_supports_explicit_config_path(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

@@ -130,8 +130,8 @@ The harness writes its own state under `.evoloza/`, including:
 - `.evoloza/runs/<run_id>/state.json` for the latest run state
 - `.evoloza/runs/<run_id>/rounds/...` for per-round prompts, logs, and results
 - `.evoloza/worktrees/...` for temporary candidate worktrees
-- `preserved-worktree/` snapshots inside round artifacts when
-  `git.preserve_candidate_worktrees = true`
+- `preserved-worktree/` snapshots inside round artifacts by default, including
+  built binaries such as `target/release/*`
 
 Evaluator commands also receive run-local context through environment variables:
 
@@ -394,9 +394,10 @@ the card scope.
 - Each round runs in its own candidate branch and git worktree.
 - The configured worker is asked to make one improvement attempt and return a hypothesis.
 - The evaluator command(s) run against the candidate worktree.
-- If `git.preserve_candidate_worktrees = true`, Evoloza copies the evaluated
-  candidate worktree into the round artifacts before cleanup so the exact
-  source tree and built binaries remain available later.
+- By default, Evoloza copies the evaluated candidate worktree into the round
+  artifacts before cleanup so the exact source tree and built binaries remain
+  available later. Set `git.preserve_candidate_worktrees = false` only when you
+  intentionally want smaller artifacts.
 - If the score improves, the candidate is committed and becomes the new champion.
 - If the score does not improve, the candidate branch is discarded.
 - The full experiment history is fed back into the next prompt, and exact
@@ -428,8 +429,8 @@ the card scope.
   one repair pass if the anchors do not apply cleanly on the first attempt.
 - Evaluation, promotion, artifact capture, and result history work the same way
   as in `run`.
-- If `git.preserve_candidate_worktrees = true`, execute-mode rounds also keep a
-  preserved snapshot of the evaluated worktree under the round artifacts.
+- Execute-mode rounds also keep a preserved snapshot of the evaluated worktree
+  under the round artifacts by default, including rejected candidates.
 
 ## Why The Repo Is Larger Than A Demo
 
